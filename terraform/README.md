@@ -1,6 +1,26 @@
-# Importar los recursos existentes al state de Terraform
-terraform import azapi_update_resource.function_app_settings "/subscriptions/32f3c387-f40e-43fe-8888-001be33af10d/resourceGroups/rg_zabbix_exporter/providers/Microsoft.Web/sites/func-zabbix-exporter/config/appsettings"
-
-
-# Ahora aplicar para configurar los valores
+# Pasos de despliegue
+1. Inicializar Terraform
+```bash
+cd terraform/
+terraform init
+```
+2. Crear archivo terraform.tfvars
+```bash
+cp terraform.tfvars.example terraform.tfvars
+# Editar con tus valores reales
+nano terraform.tfvars
+```
+3. Validar configuración
+```bash
+terraform validate
+terraform plan
+```
+4. Desplegar
+```bash
 terraform apply
+```
+5. Ver outputs
+```bash
+terraform output
+terraform output -json
+```
