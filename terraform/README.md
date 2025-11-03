@@ -11,12 +11,13 @@ https://learn.microsoft.com/en-us/cli/azure/install-azure-cli
 az login
 ```
 ## Estructura de archivos
+```
 terraform/
 ├── main.tf              # Configuración principal
 ├── terraform.tfvars     # Variables (NO SUBIR A GIT)
 ├── .gitignore          # Ignorar archivos sensibles
 └── README.md
-
+```
 ## Archivo .gitignore
 ```bash
 # Terraform
