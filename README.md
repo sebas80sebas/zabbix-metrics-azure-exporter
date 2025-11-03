@@ -55,7 +55,7 @@ az --version
 # Login to Azure
 az login
 
-# Set your subscription (if you have multiple)
+# Set your subscription
 az account set --subscription "YOUR_SUBSCRIPTION_ID"
 ```
 
