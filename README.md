@@ -519,7 +519,6 @@ terraform init
 
 **Security**
 - Never commit `terraform.tfvars` to Git
-- Use Azure Key Vault for sensitive values (advanced setup)
 - Rotate credentials regularly
 - Enable Terraform state encryption
 
@@ -635,7 +634,7 @@ ONLY_LATEST_FILE="true"
 
 ---
 
-## 📊 How the Code Works
+## How the Code Works
 
 ### Execution Flow
 
@@ -769,22 +768,22 @@ files = ["Zabbix_Report_20241021_143022.xlsx"]
 ```markdown
 📊 Zabbix Monitoring Report - Ready for Download
 
-ℹ️ Information:
+Information:
 - Generated: 2024-10-21 14:30:22 UTC
 - Link expires: 2024-10-24 14:30:22 UTC
 - Validity: 72 hours
 
-📊 Available Excel Reports:
+Available Excel Reports:
 
 1. **Zabbix_Report_20241021_143022.xlsx**
-   📥 [Download Excel File](https://stzabbixexporter.blob.core.windows.net/metrics/Zabbix_Report_20241021_143022.xlsx?sv=2024-05-04&st=2024-10-21T14:30:22Z&se=2024-10-24T14:30:22Z&sr=c&sp=rl&sig=...)
+[Download Excel File](https://stzabbixexporter.blob.core.windows.net/metrics/Zabbix_Report_20241021_143022.xlsx?sv=2024-05-04&st=2024-10-21T14:30:22Z&se=2024-10-24T14:30:22Z&sr=c&sp=rl&sig=...)
 
-📥 How to download:
+How to download:
 1. Click on "Download Excel File" link above
 2. File downloads automatically
 3. Open in Microsoft Excel
 
-⚠️ Important: Links expire in 72 hours
+Important: Links expire in 168 hours
 ```
 
 ---
@@ -816,15 +815,15 @@ def monthly_metrics_export(mytimer):
 ```
 Starting Azure Function: monthly metrics extraction
 Authenticating to Zabbix...
-✅ Authentication successful
-📊 Zabbix version: 6.0.15
-🎉 Hosts processed: 45, Hosts with data: 42
+Authentication successful
+Zabbix version: 6.0.15
+Hosts processed: 45, Hosts with data: 42
 Generating Excel file...
-✅ Excel 'Zabbix_Report_20241021_143022.xlsx' uploaded
+Excel 'Zabbix_Report_20241021_143022.xlsx' uploaded
 Generating SAS token...
 Found 1 Excel file(s)
-📤 Sending notifications to Teams...
-✅ Both notifications sent successfully (Spanish and English)
+Sending notifications to Teams...
+Both notifications sent successfully (Spanish and English)
 Process completed
 ```
 
@@ -832,7 +831,7 @@ Process completed
 
 - 📧 **2 Teams messages** (Spanish + English)
 - 🔗 **Direct download links** with SAS tokens
-- ⏰ **Expiration warning** (72 hours)
+- ⏰ **Expiration warning** (168 hours)
 - 📊 **Excel file** with:
   - Executive dashboard
   - Top 10 rankings
