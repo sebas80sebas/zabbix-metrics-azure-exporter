@@ -110,11 +110,11 @@ def send_to_teams() -> None:
             )
             
             if result_es and result_en:
-                logging.info("✅ Both notifications sent successfully to Teams (Spanish and English)")
+                logging.info("Both notifications sent successfully to Teams (Spanish and English)")
             elif result_es or result_en:
-                logging.warning("⚠️ Only one notification sent successfully")
+                logging.warning("Only one notification sent successfully")
             else:
-                logging.warning("⚠️ Both Teams notifications failed to send")
+                logging.warning("Both Teams notifications failed to send")
         else:
             logging.info("TEAMS_WEBHOOK_URL not configured, skipping Teams notification")
             

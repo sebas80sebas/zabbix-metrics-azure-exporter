@@ -182,7 +182,7 @@ def generate_excel():
     cpu_chart.height = 10
     cpu_chart.width = 15
     cpu_chart.legend = None
-    ws_dashboard.add_chart(cpu_chart, f"I{cpu_start_row - 2}")
+    ws_dashboard.add_chart(cpu_chart, f"J{cpu_start_row - 2}")
 
     # Top 10 Memory Chart (placed just below CPU chart dynamically)
     mem_chart = BarChart()
@@ -199,7 +199,7 @@ def generate_excel():
     ws_dashboard.add_chart(mem_chart, f"T{cpu_start_row - 2}")  # adds space dynamically
 
     # HOST GROUPS CHARTS IN DASHBOARD
-    groups_chart_row = max(cpu_start_row + 20, mem_start_row + 20)
+    groups_chart_row = max(cpu_start_row + 13, mem_start_row + 13)
 
     # Prepare data for host groups charts
     group_stats = []
@@ -239,7 +239,8 @@ def generate_excel():
         cpu_group_chart.set_categories(cpu_group_cats)
         cpu_group_chart.height = 10
         cpu_group_chart.width = 15
-        ws_dashboard.add_chart(cpu_group_chart, f"I{groups_data_start - 1}")
+        cpu_group_chart.legend = None
+        ws_dashboard.add_chart(cpu_group_chart, f"J{groups_data_start - 1}")
 
         mem_group_chart = BarChart()
         mem_group_chart.title = "Average Memory by Host Group"
@@ -251,6 +252,7 @@ def generate_excel():
         mem_group_chart.set_categories(mem_group_cats)
         mem_group_chart.height = 10
         mem_group_chart.width = 15
+        mem_group_chart.legend = None
         ws_dashboard.add_chart(mem_group_chart, f"T{groups_data_start - 1}")
 
 
