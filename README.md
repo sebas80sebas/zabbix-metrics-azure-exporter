@@ -71,8 +71,8 @@ zabbix-metrics-exporter/
 │   ├── outputs.tf                 # Output values
 │   ├── terraform.tfvars.example   # Example variables file
 │   ├── terraform.tfvars           # Your actual values (DO NOT COMMIT)
-│   ├── .gitignore                 # Git ignore rules
-│   └── README.md                  # Terraform documentation
+│   └── .gitignore                 # Git ignore rules
+│  
 ├── function_app/
 │   ├── function_app.py            # Azure Function code
 │   ├── export_metrics_csv.py
@@ -135,50 +135,48 @@ terraform.rc
 ```hcl
 # terraform/terraform.tfvars.example
 # Copy this file to terraform.tfvars and fill in your actual values
+# DO NOT commit terraform.tfvars to Git (contains real credentials)
 
-# Azure Configuration
-azure_subscription_id = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
-azure_location        = "westeurope"
-resource_group_name   = "rg-zabbix-exporter"
+# ============================================
+# REQUIRED: Azure Subscription
+# ============================================
+subscription_id = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 
-# Naming Configuration
-project_name    = "zabbix-exporter"
-environment     = "prod"
+# ============================================
+# REQUIRED: Azure Region
+# ============================================
+location = "westeurope"
 
-# Storage Account Configuration
-storage_account_tier        = "Standard"
-storage_account_replication = "LRS"
+# ============================================
+# REQUIRED: Resource Names
+# ============================================
+resource_group_name   = "rg_zabbix_exporter"
+storage_account_name  = "stzabbixexporter"     # Must be globally unique (3-24 chars, lowercase/numbers only)
+function_app_name     = "func-zabbix-exporter"
+key_vault_name        = "kv-zabbix-exporter"   # Must be globally unique (3-24 chars)
 
-# Function App Configuration
-function_app_plan_sku = "Y1"  # Consumption plan
-
-# Zabbix Configuration
+# ============================================
+# REQUIRED: Zabbix API Configuration
+# ============================================
 zabbix_url      = "https://your-zabbix-server.com/api_jsonrpc.php"
 zabbix_user     = "your_zabbix_username"
 zabbix_password = "your_zabbix_password"
 
-# Teams Configuration
+# ============================================
+# REQUIRED: Microsoft Teams Webhook
+# ============================================
 teams_webhook_url = "https://prod-XX.westeurope.logic.azure.com:443/workflows/..."
 
-# SAS Token Configuration
-sas_expiry_hours  = "72"
-only_latest_file  = "true"
-
-# Network Configuration (Optional)
-allowed_ip_addresses = [
-  "XX.XX.XX.XX",
-  "YY.YY.YY.YY"
-]
-
-# Tags
-tags = {
-  Project     = "Zabbix Metrics Exporter"
-  Environment = "Production"
-  ManagedBy   = "Terraform"
-  CostCenter  = "IT-Monitoring"
-}
+# ============================================
+# OPTIONAL: Advanced Configuration
+# (These have sensible defaults in Terraform)
+# ============================================
+# SAS_EXPIRY_HOURS  = "168"  # Default: 168 hours (7 days)
+# ONLY_LATEST_FILE  = "true" # Default: true
 ```
-
+**Why two providers?**
+- `azurerm`: Standard Azure resources (Storage, VNet, Key Vault, etc.)
+- `azapi`: Newer Azure features not yet in azurerm (Flex Consumption Function Apps)
 ---
 
 ### Deployment Steps
@@ -214,6 +212,11 @@ nano terraform.tfvars  # or use your preferred editor
 
 **Required variables to configure:**
 - `azure_subscription_id` - Your Azure subscription ID
+- `location` - Azure region 
+- `resource_group_name` - Resource group name 
+- `storage_account_name` - Storage account (globally unique)
+- `function_app_name` - Your Function app name 
+- `key_vault_name` - Your Key Vault name (globally unique)
 - `zabbix_url` - Your Zabbix API endpoint
 - `zabbix_user` - Zabbix API username
 - `zabbix_password` - Zabbix API password
@@ -463,8 +466,15 @@ terraform destroy
 | `storage_connection_string` | Connection string (sensitive) | For application configuration |
 | `function_app_name` | Function app name | For deployments |
 | `function_app_default_hostname` | Function app URL | For testing |
+| `key_vault_name` | Key Vault name | Manage secrets manually |
+| `key_vault_uri` | Key Vault URI | Full vault URL for API access |
 | `container_name` | Blob container name | For file access |
+| `application_insights_connection_string` | App Insights connection (sensitive) | Monitor and query logs |
 
+**Get all outputs as JSON:**
+```bash
+terraform output -json | jq
+```
 ---
 
 ### Troubleshooting Terraform
@@ -849,6 +859,19 @@ metrics/
 ```
 
 ---
+
+#### Cost Optimization
+
+**Cost breakdown (estimated):**
+```
+Function App (Flex Consumption):  $2-10/month
+Storage Account (Hot, LRS):       $1-3/month
+Key Vault (Standard):             $0.03/month
+Application Insights:             $2-5/month
+VNet (no gateway):                Free
+-----------------------------------------
+Total:                            ~$5-20/month
+
 
 ## Security Best Practices
 
