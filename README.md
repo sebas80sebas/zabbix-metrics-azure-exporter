@@ -875,7 +875,7 @@ Application Insights:             $2-5/month
 VNet (no gateway):                Free
 -----------------------------------------
 Total:                            ~$5-20/month
-
+```
 
 ## Security Best Practices
 
