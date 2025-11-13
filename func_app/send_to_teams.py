@@ -168,7 +168,7 @@ def send_to_teams_workflow(
             files_text = "\n\n**Available:**\n\n"
             for i, file in enumerate(files, 1):
                 file_url = f"{container_url}/{file}?{sas_token}"
-                files_text += f"{i}. **{file}**\n"
+                files_text += f"{i}. **{file}**  \n"
                 files_text += f"   [Download Excel File]({file_url})\n\n"
         
         full_message = f"""**📊 Zabbix Monitoring Report - Ready for Download**
@@ -194,7 +194,7 @@ def send_to_teams_workflow(
             files_text = "\n\n**Disponible:**\n\n"
             for i, file in enumerate(files, 1):
                 file_url = f"{container_url}/{file}?{sas_token}"
-                files_text += f"{i}. **{file}**\n"
+                files_text += f"{i}. **{file}**  \n"
                 files_text += f"   [Descargar archivo Excel]({file_url})\n\n"
         
         full_message = f"""**📊 Informe de Monitorización Zabbix - Listo para Descargar**
