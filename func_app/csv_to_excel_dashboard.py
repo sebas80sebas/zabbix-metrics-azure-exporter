@@ -57,7 +57,7 @@ def generate_excel():
     wb = Workbook()
     ws_all = wb.active
     ws_all.title = "All Hosts"
-    headers = ["Host", "Metric", "Min", "Max", "Avg", "Samples", "Groups"]
+    headers = ["Host", "Metric", "Min", "Max", "Avg", "Samples", "Groups", "Unit"]
     ws_all.append(headers)
 
     for col in range(1, len(headers)+1):
@@ -79,6 +79,7 @@ def generate_excel():
         groups_str = ";".join(host_to_groups.get(host_name, ["Unknown"]))
         
         for _, row in df.iterrows():
+            unit = row.get('Unit', '')
             ws_all.append([
                 host_name,
                 row['Metric'],
@@ -86,7 +87,8 @@ def generate_excel():
                 row['Max'],
                 row['Avg'],
                 row['Samples'],
-                groups_str
+                groups_str,
+                unit
             ])
             metric_cell = ws_all.cell(row_count, 2)
             
@@ -96,17 +98,23 @@ def generate_excel():
                     group_metrics[group] = {'cpu': [], 'mem': [], 'hosts': set()}
                 group_metrics[group]['hosts'].add(host_name)
             
-            if 'cpu' in row['Metric'].lower():
+            metric_lower = row['Metric'].lower()
+            avg_val = float(row['Avg'])
+            
+            # Identificar métricas de CPU (solo porcentajes de utilización)
+            if 'cpu' in metric_lower and ('util' in metric_lower or 'usage' in metric_lower):
                 metric_cell.fill = CPU_FILL
-                cpu_data.append((host_name, row['Avg'], groups_str))
+                cpu_data.append((host_name, avg_val, groups_str))
                 for group in host_to_groups.get(host_name, ["Unknown"]):
-                    group_metrics[group]['cpu'].append((host_name, row['Avg']))
+                    group_metrics[group]['cpu'].append((host_name, avg_val))
                     
-            elif 'mem' in row['Metric'].lower():
+            # Identificar métricas de memoria (utilization o pavailable son %)
+            elif 'mem' in metric_lower and ('utilization' in metric_lower or 'pavailable' in metric_lower):
                 metric_cell.fill = MEM_FILL
-                mem_data.append((host_name, row['Avg'], groups_str))
+                mem_data.append((host_name, avg_val, groups_str))
                 for group in host_to_groups.get(host_name, ["Unknown"]):
-                    group_metrics[group]['mem'].append((host_name, row['Avg']))
+                    group_metrics[group]['mem'].append((host_name, avg_val))
+            
             row_count += 1
 
     # Main dashboard
@@ -133,7 +141,7 @@ def generate_excel():
 
     # Top 10 CPU
     current_row = row_start + len(stats) + 2
-    ws_dashboard.cell(current_row, 2, "Top 10 CPU Avg").font = Font(bold=True, size=12)
+    ws_dashboard.cell(current_row, 2, "Top 10 CPU Avg (%)").font = Font(bold=True, size=12)
     ws_dashboard.cell(current_row, 2).fill = PatternFill(start_color="E7E6E6", end_color="E7E6E6", fill_type="solid")
     
     cpu_data_sorted = sorted(cpu_data, key=lambda x: x[1], reverse=True)[:10]
@@ -152,7 +160,7 @@ def generate_excel():
             cell.fill = PatternFill(start_color="FFC000", end_color="FFC000", fill_type="solid")
 
     # Top 10 Memory
-    ws_dashboard.cell(current_row, 6, "Top 10 Memory Avg").font = Font(bold=True, size=12)
+    ws_dashboard.cell(current_row, 6, "Top 10 Memory Avg (%)").font = Font(bold=True, size=12)
     ws_dashboard.cell(current_row, 6).fill = PatternFill(start_color="E7E6E6", end_color="E7E6E6", fill_type="solid")
     
     mem_data_sorted = sorted(mem_data, key=lambda x: x[1], reverse=True)[:10]
@@ -184,7 +192,7 @@ def generate_excel():
     cpu_chart.legend = None
     ws_dashboard.add_chart(cpu_chart, f"J{cpu_start_row - 2}")
 
-    # Top 10 Memory Chart (placed just below CPU chart dynamically)
+    # Top 10 Memory Chart
     mem_chart = BarChart()
     mem_chart.title = "Top 10 Memory Usage (%)"
     mem_chart.y_axis.title = "Memory Avg (%)"
@@ -196,7 +204,7 @@ def generate_excel():
     mem_chart.height = 10
     mem_chart.width = 15
     mem_chart.legend = None
-    ws_dashboard.add_chart(mem_chart, f"T{cpu_start_row - 2}")  # adds space dynamically
+    ws_dashboard.add_chart(mem_chart, f"T{cpu_start_row - 2}")
 
     # HOST GROUPS CHARTS IN DASHBOARD
     groups_chart_row = max(cpu_start_row + 17, mem_start_row + 17)
@@ -228,7 +236,7 @@ def generate_excel():
             ws_dashboard.cell(i, 5, avg_mem).number_format = '0.00'
         groups_data_end = groups_data_start + len(group_stats) - 1
 
-        # Charts side by side, no overlap
+        # Charts side by side
         cpu_group_chart = BarChart()
         cpu_group_chart.title = "Average CPU by Host Group"
         cpu_group_chart.y_axis.title = "CPU Avg (%)"
@@ -255,8 +263,7 @@ def generate_excel():
         mem_group_chart.legend = None
         ws_dashboard.add_chart(mem_group_chart, f"T{groups_data_start - 1}")
 
-
-    # 📊 Create summary by group sheet
+    # Create summary by group sheet
     ws_groups = wb.create_sheet("By Host Groups", 1)
     ws_groups['B2'] = "METRICS BY HOST GROUP"
     ws_groups['B2'].font = Font(size=14, bold=True, color="4472C4")
@@ -281,14 +288,14 @@ def generate_excel():
         group_row += 1
         
         # Top 5 CPU in group - Header
-        ws_groups.cell(group_row, 2, "Top 5 CPU").font = Font(bold=True, size=10)
+        ws_groups.cell(group_row, 2, "Top 5 CPU (%)").font = Font(bold=True, size=10)
         
-        # Top 5 Memory in group - Header (SAME ROW)
-        ws_groups.cell(group_row, 6, "Top 5 Memory").font = Font(bold=True, size=10)
+        # Top 5 Memory in group - Header
+        ws_groups.cell(group_row, 6, "Top 5 Memory (%)").font = Font(bold=True, size=10)
         group_row += 1
         
         cpu_start_row = group_row
-        mem_start_row = group_row  # SAME ROW
+        mem_start_row = group_row
         
         # Top 5 CPU data
         if metrics['cpu']:
@@ -303,7 +310,7 @@ def generate_excel():
                 elif avg > 60:
                     cell.fill = PatternFill(start_color="FFD93D", end_color="FFD93D", fill_type="solid")
         
-        # Top 5 Memory data (ALIGNED)
+        # Top 5 Memory data
         if metrics['mem']:
             top_mem = sorted(metrics['mem'], key=lambda x: x[1], reverse=True)[:5]
             for idx, (host, avg) in enumerate(top_mem):
@@ -316,10 +323,9 @@ def generate_excel():
                 elif avg > 60:
                     cell.fill = PatternFill(start_color="FFD93D", end_color="FFD93D", fill_type="solid")
         
-        # Move to next group (after the longest list)
+        # Move to next group
         max_items = max(len(metrics['cpu']), len(metrics['mem']), 5)
         group_row = cpu_start_row + min(max_items, 3) + 2
-
 
     # Create one sheet per host with charts
     for csv_name, df in csv_data.items():
@@ -336,11 +342,13 @@ def generate_excel():
             cell.font = HEADER_FONT
             cell.alignment = Alignment(horizontal="center")
 
-        # CPU Chart
-        cpu_rows = df[df['Metric'].str.contains('cpu', case=False)]
+        # CPU Chart (solo utilization metrics)
+        cpu_rows = df[df['Metric'].str.contains('cpu', case=False) & 
+                      (df['Metric'].str.contains('util', case=False) | 
+                       df['Metric'].str.contains('usage', case=False))]
         if not cpu_rows.empty:
             chart = LineChart()
-            chart.title = f"CPU Metrics - {host_name}"
+            chart.title = f"CPU Utilization - {host_name}"
             chart.y_axis.title = "Value (%)"
             chart.x_axis.title = "Metric"
             data_col = df.columns.get_loc('Avg') + 1
@@ -353,12 +361,14 @@ def generate_excel():
             chart.legend = None
             ws_host.add_chart(chart, "H2")
 
-        # Memory Chart
-        mem_rows = df[df['Metric'].str.contains('mem', case=False)]
+        # Memory Chart (solo utilization y pavailable)
+        mem_rows = df[df['Metric'].str.contains('mem', case=False) & 
+                      (df['Metric'].str.contains('utilization', case=False) | 
+                       df['Metric'].str.contains('pavailable', case=False))]
         if not mem_rows.empty:
             chart = LineChart()
-            chart.title = f"Memory Metrics - {host_name}"
-            chart.y_axis.title = "Value"
+            chart.title = f"Memory Utilization - {host_name}"
+            chart.y_axis.title = "Value (%)"
             chart.x_axis.title = "Metric"
             data_col = df.columns.get_loc('Avg') + 1
             data = Reference(ws_host, min_col=data_col, min_row=2, max_row=ws_host.max_row)

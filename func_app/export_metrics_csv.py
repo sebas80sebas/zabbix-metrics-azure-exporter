@@ -32,6 +32,49 @@ def zabbix_api(method, params, auth=None):
     
     return result["result"]
 
+def convert_value(value, item_key, item_name):
+    """
+    Convierte valores según el tipo de métrica
+    - CPU: ya son porcentajes, mantener como están
+    - Memory size: convertir de bytes a GB
+    - Memory utilization/pavailable: ya son porcentajes
+    """
+    try:
+        val = float(value)
+        
+        # Si es un valor de tamaño de memoria (bytes), convertir a GB
+        if 'vm.memory.size' in item_key and 'pavailable' not in item_key:
+            # Convertir bytes a GB (1 GB = 1024^3 bytes)
+            return val / (1024**3)
+        
+        # Para porcentajes y otros valores, mantener como están
+        return val
+        
+    except (ValueError, TypeError):
+        return 0.0
+
+def format_value(value, item_key):
+    """
+    Formatea el valor para mostrar con el formato correcto
+    """
+    # Memory size en GB: 2 decimales
+    if 'vm.memory.size' in item_key and 'pavailable' not in item_key:
+        return f"{value:.2f}"
+    # Porcentajes y otros: 2 decimales
+    else:
+        return f"{value:.2f}"
+
+def get_unit_label(item_key):
+    """
+    Retorna la etiqueta de unidad según el tipo de métrica
+    """
+    if 'vm.memory.size' in item_key and 'pavailable' not in item_key:
+        return "GB"
+    elif 'cpu' in item_key.lower() or 'utilization' in item_key or 'pavailable' in item_key:
+        return "%"
+    else:
+        return ""
+
 def export_metrics():
     # Blob Configuration
     connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
@@ -119,7 +162,7 @@ def export_metrics():
 
         items = zabbix_api("item.get", {
             "hostids": host_id,
-            "output": ["itemid", "name", "key_", "value_type"],
+            "output": ["itemid", "name", "key_", "value_type", "units"],
             "filter": {"key_": TARGET_KEYS}
         }, auth_token)
 
@@ -128,14 +171,16 @@ def export_metrics():
 
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["Metric", "Min", "Max", "Avg", "Samples", "Host_Groups"])
+        writer.writerow(["Metric", "Min", "Max", "Avg", "Samples", "Host_Groups", "Unit"])
         has_data = False
 
         for item in items:
             item_id = item["itemid"]
             item_name = item["name"]
+            item_key = item["key_"]
             value_type = int(item["value_type"])
             groups_str = ";".join(host_to_groups.get(host_name, []))
+            unit_label = get_unit_label(item_key)
 
             try:
                 trends = zabbix_api("trend.get", {
@@ -146,15 +191,28 @@ def export_metrics():
                 }, auth_token)
 
                 if trends:
-                    min_val = min(float(t["min"]) for t in trends)
-                    max_val = max(float(t["max"]) for t in trends)
-                    total_sum = sum(float(t["avg"]) * int(t["num"]) for t in trends)
+                    # Convertir valores según el tipo de métrica
+                    min_val = convert_value(min(float(t["min"]) for t in trends), item_key, item_name)
+                    max_val = convert_value(max(float(t["max"]) for t in trends), item_key, item_name)
+                    
+                    # Para el promedio, ponderar correctamente
+                    total_sum = sum(convert_value(float(t["avg"]), item_key, item_name) * int(t["num"]) for t in trends)
                     total_count = sum(int(t["num"]) for t in trends)
                     avg_val = total_sum / total_count if total_count > 0 else 0
-                    writer.writerow([item_name, f"{min_val:.2f}", f"{max_val:.2f}", f"{avg_val:.2f}", len(trends), groups_str])
+                    
+                    writer.writerow([
+                        item_name, 
+                        format_value(min_val, item_key), 
+                        format_value(max_val, item_key), 
+                        format_value(avg_val, item_key), 
+                        len(trends), 
+                        groups_str,
+                        unit_label
+                    ])
                     has_data = True
                     continue
-            except:
+            except Exception as e:
+                print(f"Error processing trends for {item_name}: {e}")
                 pass
 
             try:
@@ -173,13 +231,24 @@ def export_metrics():
                 if not history:
                     continue
 
-                values = [float(h["value"]) for h in history]
+                # Convertir valores
+                values = [convert_value(h["value"], item_key, item_name) for h in history]
                 min_val = min(values)
                 max_val = max(values)
                 avg_val = sum(values) / len(values)
-                writer.writerow([item_name, f"{min_val:.2f}", f"{max_val:.2f}", f"{avg_val:.2f}", len(values), groups_str])
+                
+                writer.writerow([
+                    item_name, 
+                    format_value(min_val, item_key), 
+                    format_value(max_val, item_key), 
+                    format_value(avg_val, item_key), 
+                    len(values), 
+                    groups_str,
+                    unit_label
+                ])
                 has_data = True
-            except:
+            except Exception as e:
+                print(f"Error processing history for {item_name}: {e}")
                 continue
 
         if has_data:
@@ -201,3 +270,6 @@ def export_metrics():
     print(f"Host groups info saved")
 
     print(f"Hosts processed: {hosts_processed}, Hosts with data: {hosts_with_data}")
+
+if __name__ == "__main__":
+    export_metrics()
