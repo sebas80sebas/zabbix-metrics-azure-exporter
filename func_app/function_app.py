@@ -22,6 +22,7 @@ app = func.FunctionApp()
     use_monitor=False
 )
 def monthly_metrics_export(mytimer: func.TimerRequest) -> None:
+    start_time = datetime.now()
     logging.info("Starting Azure Function: monthly metrics extraction")
     
     try:
@@ -42,6 +43,17 @@ def monthly_metrics_export(mytimer: func.TimerRequest) -> None:
     except Exception as e:
         logging.error(f"Error executing function: {e}")
         raise
+    
+    finally:
+        end_time = datetime.now()
+        duration = end_time - start_time
+        duration_seconds = duration.total_seconds()
+        duration_minutes = duration_seconds / 60
+        logging.info(
+            f"Azure Function completed in "
+            f"{duration_seconds:.2f} seconds ({duration_minutes:.2f} minutes, {duration})."
+        )
+
 
 
 def send_to_teams() -> None:
