@@ -33,9 +33,15 @@ This project is a serverless Azure Function application that:
 
 ---
 
-## Infrastructure Deployment with Terraform
+## Infrastructure Deployment
 
-### Prerequisites
+For a comprehensive guide covering multiple deployment methods (Terraform, Azure CLI/ARM, and Azure Portal), please refer to the **[Deployment Guide](./DEPLOYMENT_GUIDE.md)**.
+
+---
+
+### 1. Automated Deployment with Terraform (Recommended)
+
+#### Prerequisites
 
 Before deploying the Azure Function, you need to set up the required Azure resources using Terraform.
 
