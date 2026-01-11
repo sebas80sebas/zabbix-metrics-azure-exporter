@@ -289,5 +289,3 @@ Follow these steps to route notifications to different Teams chats:
     *   If equal to `client1` -> Post to Client1 Chat.
     *   If equal to `client2` -> Post to Client2 Chat.
 3.  **Action**: Use "Post message in a chat or channel". Content: `triggerBody()?['full_message']`.
-
-```
