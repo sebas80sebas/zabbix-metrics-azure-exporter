@@ -73,24 +73,6 @@ variable "key_vault_name" {
   default     = "kv-zabbix-exporter"
 }
 
-variable "zabbix_url" {
-  description = "Zabbix API URL"
-  type        = string
-  sensitive   = true
-}
-
-variable "zabbix_user" {
-  description = "Zabbix username"
-  type        = string
-  sensitive   = true
-}
-
-variable "zabbix_password" {
-  description = "Zabbix password"
-  type        = string
-  sensitive   = true
-}
-
 variable "teams_webhook_url" {
   description = "Microsoft Teams webhook URL"
   type        = string
